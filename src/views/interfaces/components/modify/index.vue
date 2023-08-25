@@ -1,127 +1,77 @@
 <script setup>
 import { ref,reactive, onMounted } from 'vue'
 import paramsTable from '../measure/params-table.vue'
-
+import { updateApi } from '../../../../api/interface';
+const props=defineProps({
+    curapi:{
+        type:Object
+    }
+})
+console.log(props.curapi,'-----');
 const methods = [
   {
-    value: 'GET',
-    label: 'GET',
+    value: 'get',
+    label: 'get',
   },
   {
-    value: 'POST',
-    label: 'POST',
+    value: 'post',
+    label: 'post',
   },
   {
-    value: 'PUT',
-    label: 'PUT',
+    value: 'put',
+    label: 'put',
   },
   {
-    value: 'PATCH',
-    label: 'PATCH',
+    value: 'patch',
+    label: 'patch',
   },
   {
-    value: 'DELETE',
-    label: 'DELETE',
+    value: 'delete',
+    label: 'delete',
   },
 ]
-
-const data = reactive({
-  group: '默认',
-  id: '2000001',
-  name: '接口2',
-  time: '2023:8:3:14.07',
-  update_time: '2023:8:3:14.07',
-  state: '开发中',
-  method: 'GET',
-  url: '/dog',
-  summary: '接口摘要',
-  description: '接口描述',
-  tags: ['dog'],
-  creator: '张三',
-  updater: '李四',
-  params: [
-    {
-      attr: 'name',
-      type: 'string',
-      isMust: '必须',
-    },
-    {
-      attr: 'age',
-      type: 'string',
-      isMust: '必须',
-    },
-  ],
-  example: "{\n''name':'string',\n'age':'string'\n}",
-  response: {
-    '200': {
-      description: '成功',
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            properties: {
-              name: {
-                type: 'string',
-              },
-              age: {
-                type: 'string',
-              },
-            },
-          },
-        },
-      },
+const activeName=ref('params')
+//去除空请求和空mock
+const clearMockAndRequest=(data)=>{
+  if(Array.isArray(data.body)){
+    data.body.forEach((item,index)=>{
+    if(item.attr==''&&item.attrValue==''){
+      data.body.splice(index,1)
     }
-  },
-  responseExample: "{\n''name':'string',\n'age':'string'\n}",
-})
-
-const method = ref(data.method)
-const url = ref(data.url)
-
-let tabIndex = 2
-const editableTabsValue = ref('2')
-const editableTabs = ref([
-  {
-    title: '成功(200)',
-    name: '1',
-    content: 'Tab 1 content',
-  },
-  {
-    title: '记录不存在(404)',
-    name: '2',
-    content: 'Tab 2 content',
-  },
-])
-
-const handleTabsEdit = (
-  targetName,
-  action = 'remove' | 'add'
-) => {
-  if (action === 'add') {
-    const newTabName = `${++tabIndex}`
-    editableTabs.value.push({
-      title: 'New Tab',
-      name: newTabName,
-      content: 'New Tab content',
-    })
-    editableTabsValue.value = newTabName
-  } else if (action === 'remove') {
-    const tabs = editableTabs.value
-    let activeName = editableTabsValue.value
-    if (activeName === targetName) {
-      tabs.forEach((tab, index) => {
-        if (tab.name === targetName) {
-          const nextTab = tabs[index + 1] || tabs[index - 1]
-          if (nextTab) {
-            activeName = nextTab.name
-          }
-        }
-      })
-    }
-
-    editableTabsValue.value = activeName
-    editableTabs.value = tabs.filter((tab) => tab.name !== targetName)
+  })
   }
+  if(Array.isArray(data.response[0].body)){
+    data.response[0].body.forEach((item,index)=>{
+    if(item.attr==''&&item.attrValue==''){
+      data.response[0].body.splice(index,1)
+    }
+    if(item.mock==''){
+      delete item.mock
+    }
+  })
+  }
+  if(Array.isArray(data.query)){
+    data.query.forEach((item,index)=>{
+    if(item.attr==''&&item.attrValue==''){
+      data.query.splice(index,1)
+    }
+  })
+  }
+  if(Array.isArray(data.params)){
+    data.params.forEach((item,index)=>{
+    if(item.attr==''&&item.attrValue==''){
+      data.params.splice(index,1)
+    }
+  })
+  }
+  return data
+}
+const updata=()=>{
+  console.log('@@@curapiUpdata',props.curapi);
+  clearMockAndRequest(props.curapi)
+  const {_id,name,group,method,path,params,query,body,response,description}=props.curapi
+   updateApi(_id,{description,name,group,method,path,params,query,body,response}).then(res=>{  })
+
 }
 
 </script>
@@ -129,7 +79,7 @@ const handleTabsEdit = (
 <template>
   <div class="modify">
     <div class="a">
-      <el-select v-model="method" class="method">
+      <el-select v-model="curapi.method" class="method">
         <el-option
           v-for="item in methods"
           :key="item.value"
@@ -138,81 +88,48 @@ const handleTabsEdit = (
         />
       </el-select>
       <el-input
-        v-model="url"
+        v-model="curapi.path"
         class="url"
       />
-      <el-button type="primary">保存</el-button>
-      <el-button type="danger">删除</el-button>
+      <el-button type="primary" @click="updata">确定修改</el-button>
     </div>
-    <input type="text" class="summary" v-model="data.summary">
+    <input type="text" class="summary" v-model="curapi.summary" placeholder="接口描述">
     <el-row>
       <el-col :span="4" class="b">
         <div class="label">状态</div>
-        <el-select v-model="data.state">
+        <el-select v-model="curapi.state">
           <el-option label="开发中" value="开发中" />
           <el-option label="已完成" value="已完成" />
-          <el-option label="已废弃" value="已废弃" />
-        </el-select>
-      </el-col>
-      <el-col :span="4" class="b">
-        <div class="label">责任人</div>
-        <el-select v-model="data.creator">
-          <el-option label="张三" value="张三" />
-          <el-option label="李四" value="李四" />
-          <el-option label="王五" value="王五" />
-        </el-select>
-      </el-col>
-      <el-col :span="4"  class="b" >
-        <div class="label">标签</div>
-        <el-select multiple v-model="data.tags">
-          <el-option label="默认" value="默认" />
-          <el-option label="dog" value="dog" />
-          <el-option label="cat" value="cat" />
         </el-select>
       </el-col>
     </el-row>
     <div class="label">说明</div>
-    <el-input type="textarea" :autosize="{ minRows: 2, maxRows: 4 }" v-model="data.description" style="width: 60%;"></el-input>
+    <el-input type="textarea" :autosize="{ minRows: 2, maxRows: 4 }" v-model="curapi.description" style="width: 60%;"></el-input>
     <div style="margin-top: 1rem">请求参数</div>
-    <el-tabs v-model="activeName" class="params-tabs" @tab-click="handleClick" >
-      <el-tab-pane label="Params" name="params" >
-        <params-table :measureParams="data.params" />
-      </el-tab-pane>
-      <el-tab-pane label="Body" name="body">body</el-tab-pane>
-      <el-tab-pane label="Cookie" name="cookie">
-        <params-table :measureParams="data.params" />
-      </el-tab-pane>
-      <el-tab-pane label="Header" name="header">
-        <params-table :measureParams="data.params" />
-      </el-tab-pane>
-      <el-tab-pane label="前置操作" name="pre">前置操作</el-tab-pane>
-      <el-tab-pane label="后置操作" name="post">后置操作</el-tab-pane>
-    </el-tabs>
-    <div class="label">返回响应</div>
-    <el-tabs
-      v-model="editableTabsValue"
-      type="card"
-      editable
-      class="demo-tabs"
-      @edit="handleTabsEdit"
-    >
-      <el-tab-pane
-        v-for="item in editableTabs"
-        :key="item.name"
-        :label="item.title"
-        :name="item.name"
+      <el-tabs
+        v-model="activeName"
+        class="params-tabs"
+        @tab-click="handleClick"
       >
-        <label style="margin-right: 2rem">HTTP状态码：<el-input v-model="item.title" style="width: 10rem;"></el-input></label>
-        <label style="margin-right: 2rem">响应组件名称：<el-input v-model="item.title" style="width: 10rem;"></el-input></label>
-        <label style="margin-right: 2rem">内容格式：
-          <el-select>
-            <el-option label="JSON" value="JSON" />
-            <el-option label="HTML" value="HTML" />
-            <el-option label="XML" value="XML" />
-          </el-select>
-        </label>
-      </el-tab-pane>
-    </el-tabs>
+        <el-tab-pane label="Params" name="params">
+          <span>Query参数</span>
+          <params-table :params="curapi.query" label="query" />
+          <br />
+          <span>params参数</span>
+          <params-table :params="curapi.params" label="params" />
+        </el-tab-pane>
+        <el-tab-pane label="Body" name="body">
+          <params-table :params="curapi.body" label="object" />
+        </el-tab-pane>
+      </el-tabs>
+      <div class="response">
+        <span style="margin-bottom: 10px; display: block">返回响应</span>
+        <el-tabs type="border-card">
+          <el-tab-pane label="成功">
+            <params-table label="response" :params="curapi.response[0].body" />
+          </el-tab-pane>
+        </el-tabs>
+      </div>
   </div>
 </template>
 
@@ -226,7 +143,7 @@ const handleTabsEdit = (
       background: rgb(248, 248, 248);
     }
     .url {
-      width: 60%;
+      width: 80%;
       height: 2rem;
       margin: 0 1rem;
     }
@@ -238,6 +155,7 @@ const handleTabsEdit = (
     font-size: 15px;
     outline: none;
     border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
   }
   .summary:focus {
     border-bottom: 1px solid #409eff;

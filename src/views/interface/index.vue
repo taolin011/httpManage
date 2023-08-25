@@ -44,6 +44,7 @@ margin-left:15px;
     position: relative;
     border-bottom:1px solid #ededed ;
      align-items: center; 
+     
 }
 .neirong {
     flex:1;
@@ -95,15 +96,36 @@ margin-left:15px;
 <!-- 中间 -->
 <div class="between"> 
 <div class="input">
-    <el-input
-       v-model="sousuo"
-        placeholder="搜索"
-        style="width:180px;"
-      />
-      <i class="iconfont icon-icon_tianjia" title="创建新分组" style="font-size:22px;margin-left:10px;cursor: pointer;"></i>
+  <el-button type="primary" size="default" @click="newGroup = true">创建新分组</el-button>
+  <el-button  type="success" size="default" @click="router.push('/home')">返回项目</el-button>
 </div>
+  <!-- 创建新分组 -->
+      <el-dialog
+        v-model="newGroup"
+        title="创建分组"
+        width="30%"
+        :before-close="handleClose"
+      >
+        <el-form label-width="80px">
+          <el-form-item label="分组名称">
+            <el-input v-model="newGroupName" />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button
+              @click="
+                newGroup = false;
+                newGroupName = '';
+              "
+              >取消</el-button
+            >
+            <el-button type="primary" @click="createNewGroup"> 确定 </el-button>
+          </span>
+        </template>
+      </el-dialog>
 <div class="allproject">
-   <allProject @navchange="tableclick" name="所有API" :projects="interfaces"></allProject>
+   <allProject @clickOK="clickOK" @navchange="tableclick" name="所有API" :projects="interfaces"></allProject>
 </div>
 </div>
 <div class="neirong">
@@ -117,7 +139,7 @@ margin-left:15px;
  <!-- 按钮 -->
  <!-- 以下为内容，默认为API列表，点击接口后跳转路由进入接口interfaces路由 -->
  <!-- 小于2000000，即为1000000多为一级页面 -->
-<div v-if="route.params.id<2000000">
+<div v-if="route.name=='interface'">
     <!-- <div class="topbutton"> -->
  <!-- <el-button type="primary" size="default" @click="">创建API</el-button> -->
  <!-- </div> -->
@@ -127,11 +149,11 @@ margin-left:15px;
     <el-table-column prop="group" label="组名" />
     <el-table-column prop="name" label="名称" />
     <el-table-column prop="state" label="状态"  />
-    <el-table-column prop="request" label="协议" />
-    <el-table-column prop="url" label="url" />
-    <el-table-column prop="creator" label="创建者" />
-    <el-table-column prop="updater" label="最近更新者" />
-    <el-table-column prop="time" label="最近更新时间" />
+    <el-table-column prop="method" label="协议" />
+    <el-table-column prop="path" label="path" />
+    <el-table-column prop="creator.name" label="创建者" />
+    <el-table-column prop="updater.name" label="最近更新者" />
+    <el-table-column prop="createdTimeStamp" label="最近更新时间" />
     <el-table-column label="操作" >
         
         <template #default="scope">
@@ -140,8 +162,8 @@ margin-left:15px;
     <template #dropdown>
       <el-dropdown-menu>
         <el-dropdown-item @click="tableclick(scope.row, '文档')">查看API信息</el-dropdown-item>
-        <el-dropdown-item @click="tableclick(scope.row,'修改')">修改信息</el-dropdown-item>
-        <el-dropdown-item @click="Delete(scope)">删除</el-dropdown-item>
+        <el-dropdown-item v-if="is" @click="tableclick(scope.row,'修改')">修改信息</el-dropdown-item>
+        <el-dropdown-item v-if="is" @click="Delete(scope)">删除</el-dropdown-item>
       </el-dropdown-menu>
     </template>
   </el-dropdown>
@@ -152,115 +174,115 @@ margin-left:15px;
 </div>
 </div>
 
-<router-view v-else :interface="currentInterface"></router-view>
+<router-view v-else :curapi="curapi"></router-view>
 
 </div>
 </div>
 </template>
 
 <script setup>
-import { ref,reactive, onMounted } from 'vue'
+import { ref,reactive, onMounted,watch } from 'vue'
 import allProject from '../../components/all-project.vue'
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus'
+import {getApis,addApi,deleteApi} from '../../api/interface'
+import {formatDate24} from '../../utils/util'
+import {userStore} from '../../stores/userInfo.js'
+
 const route=useRoute()
+const user=userStore()
+
+
 const router=useRouter()
+const is=ref(true)
+is.value=user.is
+
+const interfacesArray=ref()
+const curapi=ref()
+
+
+
+//转二维
+const transformInterfaces=(interfacesArray)=>{
+  const map=new Map()
+  interfaces.value=[]
+  interfacesArray.forEach(item=>{
+    if(map.has(item.group)){
+      map.get(item.group).push(item)
+    }else{
+      map.set(item.group,[item])
+    }
+  })
+  map.forEach((val,key)=>{
+    interfaces.value.push(val)
+  })
+}
+
+
 
 const currentInterface=ref()
-
+const ProjectId=ref(route.params.id)
 const sousuo=ref('')
-const interfaces=ref([[{
- 
-    group:"默认",
-    id:'2000001',
-    name:"接口1",
-    time:"2023:8:3:14.07",
-    state:'开发中',
-    request:"get",
-    url:"http",
-    creator:"张三",
-    updater:"李四",
-    arrow:true,//判断箭头朝向，
-},{
-   
-    group:"默认",
-    id:'2000002',
-    name:"接口2",
-    time:"2023:8:3:14.07",
-    state:'开发中',
-    request:"post",
-    url:"http",
-    creator:"张三",
-    updater:"李四",
-    arrow:true,//判断箭头朝向，
-}],[{
-  
-    group:"第二",
-    id:'2000003',
-    name:"接口3",
-    time:"2023:8:3:14.07",
-    state:'开发中',
-    request:"post",
-    url:"http",
-    creator:"张三",
-    updater:"李四",
-    arrow:true,
-},{
-    
-    group:"第二",
-    id:'2000004',
-    name:"接口4",
-    time:"2023:8:3:14.07",
-    state:'开发中',
-    request:"get",
-    url:"http",
-    creator:"张三",
-    updater:"李四",
-    arrow:true,
-},
-{
-    
-    group:"第二",
-    id:'2000005',
-    name:"接口5",
-    time:"2023:8:3:14.07",
-    state:'已完成',
-    request:"get",
-    url:"http",
-    creator:"张三",
-    updater:"李四",
-    arrow:true,
-}]])
+const baseId=route.params.id
+const GetApis=async()=>{
+   const data=await getApis(baseId)
+   interfacesArray.value=data.apis
+  interfacesArray.value.forEach((item)=>{
+    item.createdTimeStamp=formatDate24(item.createdTimeStamp)
+  })
+   transformInterfaces(interfacesArray.value)
+
+   console.log(interfacesArray.value,'997asda');
+}
+GetApis()
+
+
+
+//新加api
+const clickOK=async(data)=>{
+    await addApi(data,baseId)
+    GetApis()
+}
+
+
+
+  const newGroup = ref(false);
+const newGroupName = ref("");
+const createNewGroup = () => {
+  if (newGroupName.value.trim()) {
+    const name = newGroupName.value.trim();
+    interfaces.value.push([{ group: name }]);
+    newGroup.value = false;
+    newGroupName.value = "";
+  } else {
+    ElMessage({
+      type: "error",
+      message: "分组名不能为空",
+    });
+  }
+};
+
+const interfaces=ref([])
+
+
+
 
 //将二维数组手动拆成一维数组以便elementui的table组件遍历
-const interfacesArray=ref()
+
+
+
 onMounted(()=>{
-    if(interfaces.value){
-        let data=[]
-     interfaces.value.forEach((item)=>{
-        data.push(...item)
-     })
-    interfacesArray.value=data
-    }
-   
+    
 })
 //导航栏
 //点击后跳转
 
-const ProjectId=ref(route.params.id)
 
-
+console.log(route.name);
 //删除
 const Delete=(scope)=>{
   
-    let index2=0
-
-    let SecondI=0
-    interfaces.value.forEach((item)=>{
-        item.forEach((items)=>{
-         if(items.id==scope.row.id){
-    
-             SecondI=index2
+  
              ElMessageBox.confirm(
     '确定删除该接口？',
     '警告',
@@ -270,13 +292,18 @@ const Delete=(scope)=>{
       type: 'warning',
     }
   )
-    .then(() => {
+    .then(async() => {
+      try {
+       await deleteApi(scope.row.id)
+      GetApis(baseId)
       ElMessage({
         type: 'success',
         message: '删除成功',
       })
-      item.splice(SecondI,1)
-      interfacesArray.value.splice(scope.$index,1)
+      } catch (error) {
+        
+      }
+     
     })
     .catch(() => {
       ElMessage({
@@ -284,11 +311,7 @@ const Delete=(scope)=>{
         message: '取消删除',
       })
     })
-         }
-         index2++         
-        })
-        index2=0
-    })
+       
     
 }
 
@@ -324,13 +347,14 @@ navbar.value.forEach((item)=>{
 
 //表格点击事件
 const tableclick=(row, tab='文档')=>{
+  curapi.value=row
+  console.log('@@@curapi',curapi.value);
   let tabs
   if(tab!=='修改'&&tab!=='文档'){
     tabs='文档'
   }else{
     tabs=tab
   }
-    console.log(row);
     let isRepeat=false
     //将点击的推到导航栏上
     navbar.value.forEach((item)=>{
@@ -354,19 +378,22 @@ const tableclick=(row, tab='文档')=>{
 
 //点击导航栏切换导航栏事件
 const changeNav=(item)=>{
-    console.log(item.isClick,22);
-    console.log(item);
-
-   if(item.routeId<2000000){
-    router.push({name:'interface',params:{id:item.routeId}})
+   interfacesArray.value.forEach((items)=>{
+    if(item.routeId==items.id){
+      curapi.value=items
+    }
+   })
+   if(item.routename=='interface'){
+    router.push({name:'interface',params:{id:baseId}})
    }else{
-    router.push({name:'interfaces',params:{id:item.routeId}})
+    router.push({name:'interfaces',params:{id:item.routeId},query:{tab:'文档'}})
    }
    navbar.value.forEach((item)=>{
         item.isClick=false
         //将其他的颜色去掉
     })
     item.isClick=true
+    
 }
 </script>
 

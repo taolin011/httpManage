@@ -9,16 +9,9 @@
 </aside>
 <!-- 中间 -->
 <div class="between"> 
-<div class="input">
-    <el-input
-       v-model="sousuo"
-        placeholder="搜索"
-        style="width:180px;"
-      />
-      <i class="iconfont icon-icon_tianjia" style="font-size:22px;margin-left:10px;cursor: pointer;"></i>
-</div>
+
 <div class="allproject">
-   <allProject name="所有项目" :projects="projects"></allProject>
+   <allProject @changeNav="projectClick" name="所有项目" :projects="projects"></allProject>
 </div>
 </div>
 <!-- 内容 -->
@@ -41,7 +34,7 @@
             <i class="iconfont icon-bitian" style="color: red;"></i>
             描述
           </div>
-          <el-input v-model="newProjects.describe" placeholder="请输入项目描述" />
+          <el-input v-model="newProjects.summary" placeholder="请输入项目描述" />
           <!-- <div class="tiptwo">成员权限</div>
           <el-select v-model="newProjects.limit" class="m-2" placeholder="选择权限">
           <el-option
@@ -107,8 +100,8 @@
  <div class="table">
     <el-table  stripe :data="projects" @row-click="projectClick" >
     <el-table-column prop="name" label="名称" width="140" />
-    <el-table-column prop="time" label="时间"  />
-    <el-table-column prop="describe" label="介绍" />
+    <el-table-column prop="createdTimeStamp" label="时间"  />
+    <el-table-column prop="summary" label="介绍" />
     <el-table-column label="操作" >
         <template #default="scope">
  <el-dropdown>
@@ -116,9 +109,9 @@
     <template #dropdown>
       <el-dropdown-menu>
     <el-dropdown-item @click="lookProjectMethod(scope)">查看项目信息</el-dropdown-item>
-        <el-dropdown-item @click="reviseProjectMethod(scope)">修改信息</el-dropdown-item>      
-        <el-dropdown-item>设置成员权限</el-dropdown-item>
-        <el-dropdown-item @click="Delete(scope)">删除</el-dropdown-item>
+        <el-dropdown-item @click="reviseProjectMethod(scope)" v-if="userId.name=='管理员'">修改信息</el-dropdown-item>      
+        <el-dropdown-item @click="quanxianClick(scope)"  v-if="userId.name=='管理员'">设置成员权限</el-dropdown-item>
+        <el-dropdown-item @click="Delete(scope)"  v-if="userId.name=='管理员'">删除</el-dropdown-item>
       </el-dropdown-menu>
     </template>
   </el-dropdown>
@@ -136,7 +129,7 @@
       <div class="tipone">名称</div>
       <div class="word">{{ curProject.name }}</div>
       <div class="tiptwo">描述</div>
-      <div class="word">{{ curProject.describe }}</div>
+      <div class="word">{{ curProject.summary }}</div>
     </el-dialog>
   <!-- 修改项目信息 -->
   <el-dialog
@@ -153,7 +146,7 @@
       <i class="iconfont icon-bitian" style="color: red;"></i>
       描述
     </div>
-    <el-input v-model="revisingProject.describe" placeholder="请输入项目描述" />
+    <el-input v-model="revisingProject.summary" placeholder="请输入项目描述" />
     <!-- <div class="tiptwo">成员权限</div>
     <el-select v-model="projects.limit" class="m-2" placeholder="选择权限">
     <el-option
@@ -172,7 +165,48 @@
       </span>
     </template>
   </el-dialog>
-
+  <!-- 权限 -->
+  <el-dialog
+    v-model="quanxianProject"
+    title="设置成员权限"
+    width="40%"
+  >
+    <div style="display: flex;align-items: center;">
+      <div>
+      用户一
+    </div>
+    <el-radio-group style="margin-left:50px" v-model="quanxianObject.用户1">
+        <el-radio label="可读写"  />
+        <el-radio label="仅可读"  />
+      </el-radio-group>
+    </div>
+    <div style="display: flex;align-items: center;">
+      <div>
+      用户二
+    </div>
+    <el-radio-group style="margin-left:50px" v-model="quanxianObject.用户2">
+        <el-radio label="可读写"  />
+        <el-radio label="仅可读"  />
+      </el-radio-group>
+    </div>
+    <div style="display: flex;align-items: center;">
+      <div>
+      用户三
+    </div>
+    <el-radio-group style="margin-left:50px" v-model="quanxianObject.用户3">
+        <el-radio label="可读写" />
+        <el-radio label="仅可读"/>
+      </el-radio-group>
+    </div>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="quanxianProject = false">取消</el-button>
+        <el-button type="primary" @click="quanxianOK">
+          确定
+        </el-button>
+      </span>
+    </template>
+  </el-dialog>
 
 
 </div>
@@ -180,43 +214,52 @@
 </template>
 
 <script setup>
-import { ref,reactive } from 'vue'
+import { ref,reactive, onMounted } from 'vue'
 import allProject from '../../components/all-project.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router';
+import {addProjects,getProjects,deleteProjects,updateProject} from '../../api/home'
+import { userStore } from '../../stores/userInfo';
+import {formatDate24} from '../../utils/util'
+
+const userInfos=userStore()
+const userIds=userInfos.userIds
+const ischange=userInfos.ischange
+const userId=userInfos.userInfo
+console.log(userId.name,123);
+
+
+
+
+
 const sousuo=ref('')
 
 const router=useRouter()
 
-const projects=reactive([{
-    id:1000001,
-    name:"项目1",
-    time:"2023:8:3:14.07",
-    describe:"1.0.0"
+const projects=ref([{
+    id:'123',
+    name:"",
+    summary:""
 },
-{
-    id:1000002,
-    name:"项目2",  
-    time:"2023:8:3:14.07",
-    describe:"1.0.0"
-},
-{
-    id:1000003,
-    name:"项目3",   
-    time:"2023:8:3:14.07",
-    describe:"1.0.0"
-  },
-  {
-    id:1000004,
-    name:"项目4",  
-    time:"2023:8:3:14.07",
-    describe:"1.0.0"
-}
-])
-const projectClick=(row)=>{   
-  router.push({ name: 'interface', params: { id: row.id } })
 
-}
+])
+
+const is=ref(true)
+const projectClick=(row)=>{
+  for(let key in row.obj){
+    if(row.obj[key]=="仅可读"&&key==userId.name){
+      is.value=false
+    }
+    }
+      ischange(is.value)
+      router.push({ name: 'interface', params: { id: row.id }})
+   }
+  
+
+  
+
+
+
 //删除
 const Delete=(scope)=>{
     ElMessageBox.confirm(
@@ -233,7 +276,8 @@ const Delete=(scope)=>{
         type: 'success',
         message: '删除成功',
       })
-      projects.splice(scope.$index,1)
+      deleteProjects(scope.row.id)
+      Getprojects()
     })
     .catch(() => {
       ElMessage({
@@ -244,27 +288,28 @@ const Delete=(scope)=>{
 
 }
 
+
+const quanxianProject=ref(false)
+const quanxianObject=ref({
+  用户1:"",
+  用户2:"",
+  用户3:"",
+})
 const addProject = ref(false)
 const reviseProject = ref(false)
 const lookProject = ref(false)
 const swaggerProject = ref(false)
 const newProjects=ref({
-    id:'',
     name:"",
-    time:"",
-    describe:""    
+    summary:""    
 })
 const revisingProject=ref({
-    id:'1000001',
     name:"项目1",
-    time:"2023:8:3:14.07",
-    describe:"1.0.0"
+    summary:"1.0.0"
 })
 const curProject=ref({
-   id:"",
   name:"",
-  time:"",
-  describe:""
+  summary:""
 })
 const index=ref(0)
   
@@ -276,19 +321,87 @@ const reviseProjectMethod=(scope)=>{
   reviseProject.value=true
   //深拷贝
   revisingProject.value.name=scope.row.name
-  revisingProject.value.describe=scope.row.describe
+  revisingProject.value.summary=scope.row.summary
   index.value=scope.$index
 }
   const reviseOK=()=>{
-    projects[index.value].name=revisingProject.value.name
-    projects[index.value].describe=revisingProject.value.describe
+    projects[index.value].value.name=revisingProject.value.name
+    projects[index.value].value.summary=revisingProject.value.summary
     reviseProject.value=false
   }
-  const createOK=()=>{
-    newProjects.value.id=projects[projects.length-1].id++
-    newProjects.value.time=new Date()
-    projects.push(newProjects.value)
-    addProject.value=false
+
+
+const Getprojects=async()=>{
+  const data=await getProjects()
+   projects.value=data.projects
+   
+  projects.value.forEach((item)=>{
+    let obj={
+  用户1:"可读写",
+  用户2:"可读写",
+  用户3:"可读写",
+}
+      if(item.excludedMembers){
+        item.excludedMembers.forEach((item1)=>{
+          
+          if(item1=='64db06f68066ab44398fe278'){
+            obj.用户1="仅可读"
+          }else if(item1=='64db06fe8066ab44398fe27a'){
+            obj.用户2="仅可读"
+          }else if(item1=='64db07018066ab44398fe27c'){
+            obj.用户3="仅可读"
+          }
+        })
+      }
+      item.obj=obj
+      item.createdTimeStamp=formatDate24(item.createdTimeStamp)
+  })
+  console.log(projects.value);
+
+}
+  Getprojects()
+
+const projectid=ref('')
+
+const quanxianOK=async()=>{
+  let array=[]
+  let i=0
+  for(let key in quanxianObject.value){
+    i++
+     if(quanxianObject.value[key]=="仅可读"){
+      array.push(userIds[i].id)
+     }
+  }
+  let excludedMember={excludedMembers:array}
+  console.log(excludedMember,987);
+ await updateProject(projectid.value,excludedMember)
+ Getprojects()
+ quanxianProject.value=false
+ 
+}
+
+
+
+
+  const createOK=async()=>{
+    if(newProjects.value!==''&&newProjects.value.name!==''&&newProjects.value.summary!==0){
+      await addProjects(newProjects.value)
+      Getprojects()
+       addProject.value=false
+    }else {
+      ElMessage({
+        type:"error",
+        message:"项目名称不能为空"
+      })
+      addProject.value=false
+    }
+
+  }
+
+  const quanxianClick=(scope)=>{
+  quanxianObject.value=scope.row.obj
+   projectid.value=scope.row.id
+    quanxianProject.value=true
   }
 // const options = [
 //   {

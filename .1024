@@ -1,0 +1,4 @@
+
+run_command: "npm run dev"
+lsp:
+  start: vue-language-server --stdio

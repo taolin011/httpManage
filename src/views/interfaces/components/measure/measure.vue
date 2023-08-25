@@ -28,7 +28,7 @@
 <template>
   <div class="measure">
     <div class="send">
-      <el-select v-model="value" class="method m-2" size="default">
+      <el-select v-model="method" class="method m-2" size="default">
         <el-option
           v-for="item in options"
           :key="item.value"
@@ -37,118 +37,111 @@
         />
       </el-select>
       <el-input
-        v-model="input"
-        :placeholder="interfaces.url"
+        v-model="path"
         style="width: 1337px; height: 32px; margin-right: 20px"
       />
-      <el-button type="primary">发送</el-button>
+      <el-button type="primary" @click="qingqiu">请求</el-button>
     </div>
     <el-tabs v-model="activeName" class="demo-tabs">
       <el-tab-pane label="Params" name="Params" class="params">
-        <span class="params-name">Query</span>
-        <paramsTable :measureParams="measureParams"></paramsTable>
+        <paramsTable :params="params" label="params"></paramsTable>
+      </el-tab-pane>
+      <el-tab-pane label="Query" name="Query" class="params">
+        <paramsTable :params="query" label="query"></paramsTable>
       </el-tab-pane>
       <el-tab-pane label="Body" name="Body">
-        <span class="params-name">form-data</span>
-        <paramsTable :measureParams="measureBody"></paramsTable>
-      </el-tab-pane>
-      <el-tab-pane label="Cookie" name="Cookie">
-        <paramsTable :measureParams="measureCookie"></paramsTable>
-      </el-tab-pane>
-      <el-tab-pane label="Header" name="Header">
-        <paramsTable :measureParams="measureHeader"></paramsTable>
+        <paramsTable :params="body" label="object"></paramsTable>
       </el-tab-pane>
     </el-tabs>
-   <response :responseData="responseData"></response>
+   <response :res="res"></response>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted,watch } from 'vue'
 import paramsTable from './params-table.vue'
-import response from '../document/response.vue'
+import response from './response.vue'
+import request from '../../../../utils/request'
+const props = defineProps({
+  curapi:{
+    type:Object
+  }
+})
+
+
+
+const res=ref()
+
+const method = ref()
+const path=ref()
+const params=ref()
+const query=ref()
+const body=ref()
+watch(()=>props.curapi.params,()=>{
+  params.value=props.curapi.params
+}, { immediate: true })
+watch(()=>props.curapi.query,()=>{
+  query.value=props.curapi.query
+}, { immediate: true })
+watch(()=>props.curapi.body,()=>{
+  body.value=props.curapi.body
+}, { immediate: true })
+
+watch(()=>props.curapi,()=>{
+  method.value=props.curapi.method
+  path.value='/mock'+props.curapi.path
+  res.value=null
+ 
+}, { immediate: true })
 const activeName = ref('Params')
 
-const interfaces = {
-  group: '默认',
-  id: '2000001',
-  name: '接口2',
-  time: '2023:8:3:14.07',
-  update_time: '2023:8:3:14.07',
-  state: '开发中',
-  request: 'GET',
-  url: 'dog',
-  creator: '张三',
-  updater: '李四',
-  params: [
-    {
-      attr: 'name',
-      type: 'string',
-      isMust: '必须',
-    },
-    {
-      attr: 'age',
-      type: 'string',
-      isMust: '必须',
-    },
-  ],
-  example: "{\n''name':'string',\n'age':'string'\n}",
-  response: [
-    {
-      attr: 'name',
-      type: 'string',
-    },
-    {
-      attr: 'age',
-      type: 'string',
-    },
-  ],
-  responseExample: "{\n''name':'string',\n'age':'string'\n}",
+
+
+const qingqiu=async()=>{
+  if(method.value=='get'){
+    const result=await request.get(`${path.value}`)
+res.value=result
+
+  }else if(method.value=='post'){
+    const result=request.post(`${path.value}`)
+    res.value=result
+  }else if(method.value=='put'){
+    const result=request.put(`${path.value}`)
+    res.value=result
+  }else if(method.value=='delete'){
+    const result=request.delete(`${path.value}`)
+    res.value=result
+  }else if(method.value=='options'){
+    const result=request.options(`${path.value}`)
+    res.value=result
+  }
+  console.log(res.value);
 }
-const value = ref('')
-const input = ref('')
+
 const options = [
   {
-    value: 'GET',
-    label: 'GET',
+    value: 'get',
+    label: 'get',
   },
   {
-    value: 'POST',
-    label: 'POST',
+    value: 'post',
+    label: 'post',
   },
   {
-    value: 'PUT',
-    label: 'PUT',
+    value: 'put',
+    label: 'put',
   },
   {
-    value: 'DELETE',
-    label: 'DELETE',
+    value: 'delete',
+    label: 'delete',
   },
   {
-    value: 'OPTIONS',
-    label: 'OPTIONS',
+    value: 'options',
+    label: 'options',
   },
 ]
-const props = defineProps({
-  interfaces: {
-    type: Object,
-  },
-})
-const measureParams = reactive([])
-const measureCookie = reactive([])
-const measureHeader = reactive([])
-const measureBody = reactive([])
-onMounted(() => {
-  interfaces.params.forEach((item, index) => {
-    measureParams.push({
-      attr: item.attr,
-      attrValue: '',
-      type: item.type,
-      typeValue: '',
-      declare: '',
-    })
-  })
-})
+
+
 
 const responseData = {
   request: 'GET',

@@ -11,7 +11,7 @@
             <i class="iconfont icon-zhanghao"></i>
         </span>
         <el-input
-        v-model="input.textword"
+        v-model="input.name"
           ref="username"
           placeholder="Username"
           name="username"
@@ -42,7 +42,7 @@
         </span>
       </el-form-item>
 
-      <el-button style="width:100%;margin-bottom:30px;height: 40px;">登  录</el-button>
+      <el-button style="width:100%;margin-bottom:30px;height: 40px;" @click="login">登  录</el-button>
 
     </el-form>
   </div>
@@ -50,10 +50,18 @@
 
 <script setup>
 import { ref,reactive } from 'vue'
+import {userStore} from '../../stores/userInfo'
+
+const userInfo=userStore()
+
 const input=ref({
-    textword:'admin',
-    password:123456
+    name:'管理员',
+    password:"123456"
 })
+
+const login=()=>{
+  userInfo.Login(input.value)
+}
 </script>
 
 <style lang="less">

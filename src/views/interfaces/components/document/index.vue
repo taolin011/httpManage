@@ -2,8 +2,8 @@
   <div class="message">
     <span class="interface-name">{{ interfaces.name }}</span>
     <div class="path">
-      <span class="method">{{ interfaces.request }}</span>
-      <span class="url">/{{ interfaces.url }}</span>
+      <span class="method">{{ interfaces.method }}</span>
+      <span class="url">{{ interfaces.path }}</span>
       <span class="state">
         <i class="iconfont icon-dian"></i>
         {{ interfaces.state }}
@@ -11,31 +11,24 @@
     </div>
     <ul class="main-message">
       <li>
-        创建时间
-        <span>{{ interfaces.time }}</span>
+        最近更新时间:
+        <span>{{ interfaces.createdTimeStamp }}</span>
       </li>
       <li>
-        更新时间
-        <span>{{ interfaces.update_time }}</span>
+        最近修改者:
+        <span>{{ interfaces.updater.name }}</span>
       </li>
       <li>
-        修改者
-        <span>{{ interfaces.updater }}</span>
+        创建者:
+        <span>{{ interfaces.creator.name }}</span>
       </li>
       <li>
-        创建者
-        <span>{{ interfaces.creator }}</span>
-      </li>
-      <li>
-        目录
+        目录:
         <span>{{ interfaces.group }}</span>
       </li>
     </ul>
     <div class="mock">
-      <span class="mock-name" style="display: block">Mock</span>
-      <el-button type="primary" class="btn" plain size="large" @click="isMock=!isMock">
-        本地Mock
-      </el-button>
+     
       <table class="mock-table" v-show="isMock">
         <tr>
           <th style="width: 360px; height: 44px">名称</th>
@@ -57,39 +50,87 @@
         <tr>
           <td
             style="
-              width: 980px;
+              width: 1400px;
               height: 40px;
               font-size: 16px;
-              text-align: center;
+              font-weight: 600;
+              padding-left: 20px;
             "
           >
-            Body请求参数(application/json)
+            query请求参数
           </td>
-          <td
-            style="
-              width: 450px;
-              height: 40px;
-              font-size: 16px;
-              text-align: center;
-            "
-          >
-            示例
-          </td>
+          
         </tr>
         <tr>
-          <td class="params" style="height: 200px">
+          <td class="params">
             <ul>
-              <li v-for="(item, index) in interfaces.params" :key="index">
+              <li v-for="(item, index) in interfaces.query" :key="index">
                 <span class="attr">{{ item.attr }}</span>
-                <span>{{ item.type }}</span>
-                <span class="isMust">{{ item.isMust }}</span>
+                <span style="color: rgba(0, 0, 0, 0.6);">{{ item.typeValue }}</span>
+                <span class="isMust">{{ item.summary }}</span>
               </li>
             </ul>
           </td>
-          <td class="example">
-            <span>
-              {{ interfaces.example }}
-            </span>
+        </tr>
+      </table>
+    </div>
+  <!-- params请求参数 -->
+    <div class="request">
+      <table class="request-body">
+        <tr>
+          <td
+            style="
+              width: 1400px;
+              height: 40px;
+              font-size: 16px;
+              font-weight: 600;
+              padding-left: 20px;
+            "
+          >
+            params请求参数
+          </td>
+          
+        </tr>
+        <tr>
+          <td class="params">
+            <ul>
+              <li v-for="(item, index) in interfaces.params" :key="index">
+                <span class="attr">{{ item.attr }}</span>
+                <span style="color: rgba(0, 0, 0, 0.6);">{{ item.typeValue }}</span>
+                <span class="isMust">{{ item.summary }}</span>
+              </li>
+            </ul>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- body请求参数 -->
+    <div class="request">
+      <table class="request-body">
+        <tr>
+          <td
+            style="
+              width: 1400px;
+              height: 40px;
+              font-size: 16px;
+              font-weight: 600;
+              padding-left: 20px;
+            "
+          >
+            body请求参数(application/json)
+          </td>
+          
+        </tr>
+        <tr>
+          <td class="params">
+            <ul>
+              <li v-for="(item, index) in interfaces.body" :key="index">
+                <span class="attr">{{ item.attr }}</span>
+                <span style="color: rgba(0, 0, 0, 0.6);">{{ item.typeValue }}</span>
+                <span class="isMust">{{ item.summary }}</span>
+              </li>
+            </ul>
           </td>
         </tr>
       </table>
@@ -100,22 +141,18 @@
         <span class="tab">成功(200)</span>
         <table class="response-table">
           <tr>
-            <td style="text-align: center; width: 1000px; height: 40px">
+            <td style=" width: 1400px; height: 40px;padding-left: 20px;">
               数据结构
             </td>
-            <td style="text-align: center; width: 450px; height: 40px">示例</td>
           </tr>
           <tr>
-            <td style="width: 1000px; height: 200px">
+            <td>
               <ul>
-                <li v-for="(item, index) in interfaces.response" :key="index">
+                <li v-for="(item, index) in interfaces.response[0].body" :key="index">
                   <span class="attr">{{ item.attr }}</span>
-                  <span class="type">{{ item.type }}</span>
+                  <span class="type">{{ item.typeValue }}</span>
                 </li>
               </ul>
-            </td>
-            <td style="width: 450px; height: 200px">
-              {{ interfaces.responseExample }}
             </td>
           </tr>
         </table>
@@ -126,53 +163,14 @@
 
 <script setup>
 import {ref} from 'vue'
-const interfaces = {
-  group: '默认',
-  id: '2000001',
-  name: '接口2',
-  time: '2023:8:3:14.07',
-  update_time: '2023:8:3:14.07',
-  state: '开发中',
-  request: 'GET',
-  url: 'dog',
-  mockUrl:'	http://127.0.0.1:4523/m1/3084499-0-default/dog',
-  creator: '张三',
-  updater: '李四',
-  params: [
-    {
-      attr: 'name',
-      type: 'string',
-      isMust: '必须',
-    },
-    {
-      attr: 'age',
-      type: 'string',
-      isMust: '必须',
-    },
-  ],
-  example: "{\n''name':'string',\n'age':'string'\n}",
-  response: [
-    {
-      attr: 'name',
-      type: 'string',
-    },
-    {
-      attr: 'age',
-      type: 'string',
-    },
-  ],
-  responseExample: "{\n''name':'string',\n'age':'string'\n}",
-}
-const isMock = ref(false)
-const props = defineProps({
-  interfaces: {
-    type: Object,
-  },
+const props=defineProps({
+  interfaces:{
+    type:Object
+  }
 })
-const emit=defineEmits(['goMeasure'])
-const goMeasure = () => {
-  emit('goMeasure',interfaces.mockUrl)
-}
+
+const isMock = ref(false)
+
 </script>
 
 <style scoped lang="less">
@@ -210,7 +208,7 @@ const goMeasure = () => {
   }
   .main-message {
     margin: 16px 15px;
-    width: 829px;
+    width: 1200px;
     height: 24px;
     display: flex;
     justify-content: space-around;
@@ -264,7 +262,7 @@ const goMeasure = () => {
       color: rgba(0, 0, 0, 0.7);
     }
     .request-body {
-      margin: 20px 27px;
+      margin: 20px 30px;
       border-top: 1px solid rgba(0, 0, 0, 0.15);
       border-left: 1px solid rgba(0, 0, 0, 0.15);
       td {

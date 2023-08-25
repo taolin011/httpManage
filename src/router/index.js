@@ -4,7 +4,7 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-
+      name: "login",
       path: '/login',
       component: () => import('../views/login/index.vue')
     },
@@ -33,5 +33,6 @@ const router = createRouter({
     return { top: 0, left: 0 }
   },
 })
+
 
 export default router
