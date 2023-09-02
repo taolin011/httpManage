@@ -1,6 +1,8 @@
 项目介绍：
 HTTP接口管理平台是集API文档、API调试、API Mock、API自动化测试API一体化协作，权限管理的接口管理平台
 
+后端地址：https://github.com/taolin011/back-end.git
+
 技术选型与相关开发文档：
 - 利用1024code环境，实现前端，后端的同时开发。
 - 前端技术栈选择是vue3，组件库使用element-plus。
