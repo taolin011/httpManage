@@ -13,6 +13,7 @@ HTTP接口管理平台是集API文档、API调试、API Mock、API自动化测�
   - Mock服务：支持多种 HTTP 请求方式，支持参数匹配和响应规则，支持复杂数据结构
 
 项目代码介绍：
+```
 |—public                                                 //public
 |—src                                                    //源代码
 |   |—api                                                //所有请求
@@ -58,3 +59,5 @@ HTTP接口管理平台是集API文档、API调试、API Mock、API自动化测�
 |—index.html                                             //index.html
 |—package-json                                           //package.json
 |—vite.config.js                                         //项目配置
+
+```
